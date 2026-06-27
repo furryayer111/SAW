@@ -9,13 +9,11 @@
 namespace fs = std::filesystem;
 
 bool create_directory_if_missing(const fs::path& dir_path) {
-	// Проверяем, существует ли путь и является ли он папкой
 	if (fs::exists(dir_path) && fs::is_directory(dir_path)) {
 		std::cout << "Папка уже существует: " << dir_path << std::endl;
-		return false; // Ничего делать не нужно
+		return false;
 	}
 
-	// Создаём папку (и все промежуточные каталоги, если они отсутствуют)
 	if (fs::create_directories(dir_path)) {
 		std::cout << "Создана папка: " << dir_path << std::endl;
 		return true;
@@ -28,12 +26,10 @@ bool create_directory_if_missing(const fs::path& dir_path) {
 
 template<typename T>
 std::vector<T> subvector(const std::vector<T>& data, int start, int end) {
-	// Проверка границ
 	if (data.empty() || start > end) {
 		return {};
 	}
 
-	// Приводим к положительным индексам
 	int size = static_cast<int>(data.size());
 	if (start < 0) start = 0;
 	if (end >= size) end = size - 1;
@@ -50,7 +46,6 @@ std::vector<T>& operator+=(std::vector<T>& left, const std::vector<T>& right) {
 
 class WAVExporter {
 public:
-	// Сохраняет стерео-данные (8-битные знаковые) в WAV (16-битный, 8000 Гц)
 	static bool exportToWav(
 		const std::pair<std::vector<char>, std::vector<char>>& stereoData,
 		const std::string& outputPath,
@@ -62,10 +57,9 @@ public:
 
 		size_t numSamples = stereoData.first.size();
 		if (stereoData.second.size() != numSamples) {
-			return false; // каналы разной длины
+			return false;
 		}
 
-		// Конвертируем 8-битные знаковые в 16-битные (интерливинг)
 		std::vector<int16_t> pcmData;
 		pcmData.reserve(numSamples * 2);
 
@@ -76,11 +70,9 @@ public:
 			pcmData.push_back(right);
 		}
 
-		// Записываем WAV
 		return writeWav(pcmData, outputPath, sampleRate, 2);
 	}
 
-	// Сохраняет моно-данные (8-битные знаковые) в WAV (16-битный, 8000 Гц)
 	static bool exportToWav(
 		const std::vector<char>& monoData,
 		const std::string& outputPath,
@@ -90,7 +82,6 @@ public:
 			return false;
 		}
 
-		// Конвертируем 8-битные знаковые в 16-битные
 		std::vector<int16_t> pcmData;
 		pcmData.reserve(monoData.size());
 
@@ -99,7 +90,6 @@ public:
 			pcmData.push_back(val);
 		}
 
-		// Записываем WAV
 		return writeWav(pcmData, outputPath, sampleRate, 1);
 	}
 
@@ -118,13 +108,13 @@ private:
 		uint16_t blockAlign = channels * sizeof(int16_t);
 		uint16_t bitsPerSample = 16;
 
-		// RIFF заголовок
+		// RIFF
 		file.write("RIFF", 4);
 		uint32_t chunkSize = 36 + dataSize;
 		file.write(reinterpret_cast<const char*>(&chunkSize), 4);
 		file.write("WAVE", 4);
 
-		// fmt чанк
+		// fmt
 		file.write("fmt ", 4);
 		uint32_t subchunk1Size = 16;
 		file.write(reinterpret_cast<const char*>(&subchunk1Size), 4);
@@ -136,7 +126,7 @@ private:
 		file.write(reinterpret_cast<const char*>(&blockAlign), 2);
 		file.write(reinterpret_cast<const char*>(&bitsPerSample), 2);
 
-		// data чанк
+		// data
 		file.write("data", 4);
 		file.write(reinterpret_cast<const char*>(&dataSize), 4);
 		file.write(reinterpret_cast<const char*>(pcmData.data()), dataSize);
@@ -291,27 +281,20 @@ public:
 		std::vector<std::string> files;
 
 		try {
-			// Проверяем, существует ли папка
 			if (!fs::exists(directoryPath)) {
 				throw std::runtime_error("\nFolder does not exists: " + directoryPath);
 			}
 
-			// Проверяем, что это папка
 			if (!fs::is_directory(directoryPath)) {
 				throw std::runtime_error("\nExpended error: " + directoryPath);
 			}
 
-			// Проходим по всем элементам в папке
 			for (const auto& entry : fs::directory_iterator(directoryPath)) {
-				// Проверяем, что это файл (не папка)
 				if (fs::is_regular_file(entry.path())) {
 					std::string filename = entry.path().filename().string();
-
-					// Проверяем расширение .wav (регистронезависимо)
 					if (filename.size() >= 4) {
 						std::string ext = filename.substr(filename.size() - 4);
 
-						// Приводим к нижнему регистру для сравнения
 						std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
 						if (ext == ".wav") {
@@ -321,7 +304,6 @@ public:
 				}
 			}
 
-			// Сортируем для удобства
 			std::sort(files.begin(), files.end());
 
 		}
@@ -398,9 +380,6 @@ int main() {
 		sfxs.push_back(current_sfx);
 	}
 
-	//std::pair<std::vector<char>, std::vector<char>> original;
-	//std::vector<namedSFX>                           sfxs;
-
 	stage = "dividing pieces";
 	std::cout << "\rCurrent stage: " << stage << " (" << ++stageN << "/4)            ";
 
@@ -418,8 +397,6 @@ int main() {
 
 	std::cout << "\n.";
 	std::cout << "\rAssembling samples; ( " << smI << "/" << sMAX << " )            ";
-
-	// 1. Перебрать все кусочки для одного кусочка оригинала и составить карту совпадений
 
 	std::vector<outp> output_dat;
 	SMPL preview;
@@ -457,7 +434,6 @@ int main() {
 		std::cout << "\rAssembling samples; ( " << smI << "/" << sMAX << " )            ";
 	}
 
-	//кодировка
 	std::string output_string = std::to_string(step) + "~";
 
 	for (auto& el : output_dat) {
