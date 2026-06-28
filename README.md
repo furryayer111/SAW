@@ -155,8 +155,3 @@ _Phan70m
 
 ##  License
 MIT License
-
----
-
-## 📥 Download
-[SAW_v1.1.zip] - Includes executable, source code, and documentation
